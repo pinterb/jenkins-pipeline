@@ -44,6 +44,8 @@ def gitEnvVars() {
         error "${e}"
     }
     println "env.GIT_COMMIT_ID ==> ${env.GIT_COMMIT_ID}"
+    sh 'rm -rf git_commit_id.txt'
+
 
     sh 'git config --get remote.origin.url> git_remote_origin_url.txt'
     try {
@@ -52,6 +54,17 @@ def gitEnvVars() {
         error "${e}"
     }
     println "env.GIT_REMOTE_URL ==> ${env.GIT_REMOTE_URL}"
+    sh 'rm -rf git_remote_origin_url.txt'
+
+
+    sh 'git describe --always --dirty > git_version.txt'
+    try {
+        env.GIT_VERSION = readFile('git_version.txt').trim()
+    } catch (e) {
+        error "${e}"
+    }
+    println "env.VERSION ==> ${env.GIT_VERSION}"
+    sh 'rm -rf git_version.txt'
 }
 
 def containerBuildPub(Map args) {
@@ -62,7 +75,7 @@ def containerBuildPub(Map args) {
 
         // def img = docker.build("${args.acct}/${args.repo}", args.dockerfile)
         def img = docker.image("${args.acct}/${args.repo}")
-        sh "docker build --build-arg VCS_REF=${env.GIT_SHA} --build-arg BUILD_DATE=`date -u +'%Y-%m-%dT%H:%M:%SZ'` -t ${args.acct}/${args.repo} ${args.dockerfile}"
+        sh "docker build --build-arg VERSION=${env.GIT_VERSION} --build-arg VCS_URL=${env.GIT_REMOTE_URL} --build-arg VCS_REF=${env.GIT_SHA} --build-arg BUILD_DATE=`date -u +'%Y-%m-%dT%H:%M:%SZ'` -t ${args.acct}/${args.repo} ${args.dockerfile}"
         for (int i = 0; i < args.tags.size(); i++) {
             img.push(args.tags.get(i))
         }
