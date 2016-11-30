@@ -34,6 +34,17 @@ def helmDeploy(Map args) {
     }
 }
 
+def dockerEnvVars() {
+    sh 'stat -c %g /var/run/docker.sock > docker_group_id.txt'
+    try {
+        env.DOCKER_GROUP_ID = readFile('docker_group_id.txt').trim()
+    } catch (e) {
+        error "${e}"
+    }
+    println "env.DOCKER_GROUP_ID ==> ${env.DOCKER_GROUP_ID}"
+    sh 'rm -rf docker_group_id.txt'
+}
+
 def gitEnvVars() {
     // create git envvars
     sh 'git rev-parse HEAD > git_commit_id.txt'
